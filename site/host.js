@@ -59,6 +59,8 @@ function render(message) {
     "lede",
     state.scores.length === 1 ? "1 play saved." : state.scores.length + " plays saved."
   );
+  const parts = [top, title, lede];
+  if (message && state.scores.length) parts.push(el("p", "prompt", message));
 
   const table = document.createElement("table");
   table.className = "scores";
@@ -87,13 +89,14 @@ function render(message) {
     cell.append(button);
     headRow.append(cell);
   });
+  headRow.append(el("th", null, ""));
   thead.append(headRow);
 
   const tbody = document.createElement("tbody");
   if (!state.scores.length) {
     const row = document.createElement("tr");
     const cell = el("td", null, message || "No scores yet.");
-    cell.colSpan = columns.length;
+    cell.colSpan = columns.length + 1;
     row.append(cell);
     tbody.append(row);
   } else {
@@ -102,11 +105,18 @@ function render(message) {
       row.append(el("td", null, score.name));
       row.append(el("td", "num", score.score + " / 5"));
       row.append(el("td", null, playedLabel(score.playedAt)));
+      const removeCell = document.createElement("td");
+      const remove = el("button", "btn btn-quiet delete", "Delete");
+      remove.type = "button";
+      remove.addEventListener("click", () => removePlayer(score.name));
+      removeCell.append(remove);
+      row.append(removeCell);
       tbody.append(row);
     });
   }
   table.append(thead, tbody);
-  host.replaceChildren(top, title, lede, table);
+  parts.push(table);
+  host.replaceChildren(...parts);
 }
 
 function renderGate(errorText) {
@@ -138,6 +148,41 @@ function renderGate(errorText) {
   });
   host.replaceChildren(eyebrow, title, lede, form);
   input.focus();
+}
+
+function removePlayer(name) {
+  const password = sessionStorage.getItem(PASSWORD_KEY) || "";
+  if (!password) {
+    renderGate();
+    return;
+  }
+  const confirmed = window.confirm("Delete " + name + " and every saved play for that name?");
+  if (!confirmed) return;
+  fetch("/api/scores", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Host-Password": password,
+    },
+    body: JSON.stringify({ name: name }),
+  })
+    .then((res) => {
+      if (res.status === 401) {
+        sessionStorage.removeItem(PASSWORD_KEY);
+        renderGate("That password is not right.");
+        return null;
+      }
+      if (!res.ok) throw new Error("delete failed");
+      return res.json();
+    })
+    .then((data) => {
+      if (!data) return;
+      state.scores = state.scores.filter((score) => score.name !== name);
+      render();
+    })
+    .catch(() => {
+      render("That player could not be deleted.");
+    });
 }
 
 function load() {

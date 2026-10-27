@@ -87,6 +87,32 @@ class Handler(SimpleHTTPRequestHandler):
             conn.close()
         self.respond(201, {"id": saved_id, "name": name, "score": score})
 
+    def do_DELETE(self):
+        if self.path.split("?", 1)[0] != "/api/scores":
+            self.send_error(404)
+            return
+        if not host_password_ok(self.headers.get("X-Host-Password")):
+            self.respond(401, {"error": "Host password required."})
+            return
+        length = int(self.headers.get("Content-Length", "0") or 0)
+        try:
+            payload = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.respond(400, {"error": "Send the player name to delete."})
+            return
+        name = " ".join(str(payload.get("name", "")).split())
+        if not name or len(name) > 60:
+            self.respond(400, {"error": "Send the player name to delete."})
+            return
+        conn = connect()
+        try:
+            cur = conn.execute("DELETE FROM scores WHERE name = ?", (name,))
+            conn.commit()
+            deleted = cur.rowcount
+        finally:
+            conn.close()
+        self.respond(200, {"name": name, "deleted": deleted})
+
     def respond(self, status, body):
         data = json.dumps(body).encode()
         self.send_response(status)
