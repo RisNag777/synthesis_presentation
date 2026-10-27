@@ -341,6 +341,70 @@ h2.section {
   font-size: 14px;
 }
 
+.host-wrap {
+  max-width: 860px;
+}
+
+.btn-quiet {
+  background: transparent;
+  color: var(--slate);
+  border: 1px solid var(--line);
+}
+
+.btn-quiet:hover {
+  background: var(--slate-soft);
+}
+
+.scores {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.scores th,
+.scores td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.scores tr:last-child td {
+  border-bottom: 0;
+}
+
+.scores th {
+  background: var(--slate-soft);
+}
+
+.sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--slate);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sort:focus-visible {
+  outline: 2px solid var(--slate);
+  outline-offset: 3px;
+}
+
+.scores td.num {
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 640px) {
   .wrap {
     padding: 32px 18px 64px;

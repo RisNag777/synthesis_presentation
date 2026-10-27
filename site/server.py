@@ -1,5 +1,6 @@
 """Serve the game and store each player's name and score."""
 
+import hmac
 import json
 import sqlite3
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -7,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "scores.db"
+HOST_PASSWORD = "SpaceJam"
 
 
 def connect():
@@ -25,9 +27,38 @@ def connect():
     return conn
 
 
+def host_password_ok(header):
+    given = (header or "").encode()
+    return hmac.compare_digest(given, HOST_PASSWORD.encode())
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
+
+    def do_GET(self):
+        if self.path.split("?", 1)[0] == "/api/scores":
+            if not host_password_ok(self.headers.get("X-Host-Password")):
+                self.respond(401, {"error": "Host password required."})
+                return
+            conn = connect()
+            try:
+                rows = conn.execute(
+                    "SELECT id, name, score, played_at FROM scores ORDER BY id"
+                ).fetchall()
+            finally:
+                conn.close()
+            self.respond(
+                200,
+                {
+                    "scores": [
+                        {"id": row[0], "name": row[1], "score": row[2], "playedAt": row[3]}
+                        for row in rows
+                    ]
+                },
+            )
+            return
+        super().do_GET()
 
     def do_POST(self):
         if self.path.split("?", 1)[0] != "/api/scores":
