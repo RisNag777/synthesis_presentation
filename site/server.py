@@ -9,6 +9,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "scores.db"
 HOST_PASSWORD = "SpaceJam"
+PUBLIC_FILES = {
+    "/",
+    "/index.html",
+    "/game.js",
+    "/styles.css",
+    "/host.html",
+    "/host.js",
+    "/right-choice.png",
+    "/wrong-choice.jpg",
+    "/mixed-choice.png",
+}
 
 
 def connect():
@@ -36,8 +47,15 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
+    def do_HEAD(self):
+        if self.path.split("?", 1)[0] not in PUBLIC_FILES:
+            self.send_error(404)
+            return
+        super().do_HEAD()
+
     def do_GET(self):
-        if self.path.split("?", 1)[0] == "/api/scores":
+        path = self.path.split("?", 1)[0]
+        if path == "/api/scores":
             if not host_password_ok(self.headers.get("X-Host-Password")):
                 self.respond(401, {"error": "Host password required."})
                 return
@@ -57,6 +75,9 @@ class Handler(SimpleHTTPRequestHandler):
                     ]
                 },
             )
+            return
+        if path not in PUBLIC_FILES:
+            self.send_error(404)
             return
         super().do_GET()
 
