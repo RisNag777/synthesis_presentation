@@ -1,0 +1,5 @@
+.streamlit/secrets.toml
+synth_env/
+site/scores.db
+__pycache__/
+.venv/
