@@ -39,7 +39,7 @@ def connect():
 
 
 def host_password_ok(header):
-    given = (header or "").encode()
+    given = (header or "").strip().encode()
     return hmac.compare_digest(given, HOST_PASSWORD.encode())
 
 

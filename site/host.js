@@ -128,7 +128,10 @@ function renderGate(errorText) {
   const input = document.createElement("input");
   input.type = "password";
   input.id = "host-password";
-  input.autocomplete = "current-password";
+  input.name = "host-key";
+  input.autocomplete = "off";
+  input.autocapitalize = "off";
+  input.spellcheck = false;
   input.required = true;
   label.htmlFor = input.id;
   const button = el("button", "btn", "Open scores");
@@ -137,7 +140,7 @@ function renderGate(errorText) {
   form.append(label, input, button, error);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    const password = input.value;
+    const password = input.value.trim();
     if (!password) {
       error.textContent = "Enter the host password.";
       input.focus();
